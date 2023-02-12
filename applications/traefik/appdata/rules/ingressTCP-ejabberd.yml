@@ -1,0 +1,77 @@
+tcp:
+  routers:
+    xmpp-client:
+      entryPoints:
+        - websecure
+      #middlewares:
+      #  - inflightconn
+      service: xmpp-client-ejabberd
+      rule: HostSNI(`*`)
+    xmpps-client:
+      entryPoints:
+        - websecure
+      #middlewares:
+      #  - inflightconn
+      service: xmpps-client-ejabberd
+      rule: ALPN(`xmpp-client`)
+      priority: 200
+      tls:
+        passthrough: true
+    xmpp-server:
+      entryPoints:
+        - xmpp-server
+      #middlewares:
+      #  - inflightconn
+      service: xmpp-server-ejabberd
+      rule: HostSNI(`*`)
+    xmpps-server:
+      entryPoints:
+        - websecure
+      #middlewares:
+      #  - inflightconn
+      service: xmpps-server-ejabberd
+      rule: ALPN(`xmpp-server`)
+      priority: 199
+      tls:
+        passthrough: true
+    xmpp-https:
+      entryPoints:
+        - websecure
+      #middlewares:
+      #  - inflightconn
+      service: xmpp-https-ejabberd
+      rule: HostSNI(`example.net`)
+      tls:
+        passthrough: true
+
+  services:
+    xmpp-client-ejabberd:
+      loadBalancer:
+        proxyProtocol:
+          version: 2
+        servers:
+          - address: xmpp-ejabberd:5222
+    xmpps-client-ejabberd:
+      loadBalancer:
+        proxyProtocol:
+          version: 2
+        servers:
+          - address: xmpp-ejabberd:5223
+    xmpp-server-ejabberd:
+      loadBalancer:
+        proxyProtocol:
+          version: 2
+        servers:
+          - address: xmpp-ejabberd:5269
+    xmpps-server-ejabberd:
+      loadBalancer:
+        proxyProtocol:
+          version: 2
+        servers:
+          - address: xmpp-ejabberd:5270
+    xmpp-https-ejabberd:
+      loadBalancer:
+        proxyProtocol:
+          version: 2
+        servers:
+          - address: xmpp-ejabberd:5443

@@ -1,0 +1,17 @@
+http:
+  routers:
+    traefik-dashboard:
+      entryPoints:
+        - websecure
+      middlewares:
+        - https-redirectscheme
+        - rate-limit
+        - basic-auth
+      service: api@internal
+      rule: Host(`traefik.example.net`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+#      priority: 42
+      tls:
+        options: mintls13
+        certResolver: tls-challenge
+        domains:
+          - main: traefik.example.net

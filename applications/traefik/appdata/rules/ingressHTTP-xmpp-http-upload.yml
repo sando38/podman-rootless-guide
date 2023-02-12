@@ -1,0 +1,22 @@
+http:
+  routers:
+    xmpp-http-upload:
+      entryPoints:
+        - websecure
+      middlewares:
+        - https-redirectscheme
+        - rate-limit
+      service: xmpp-http-upload
+      rule: Host(`http-upload.example.net`)
+#      priority: 42
+      tls:
+        options: default
+        certResolver: tls-challenge
+        domains:
+          - main: http-upload.example.net
+  services:
+    xmpp-http-upload:
+      loadBalancer:
+        servers:
+        - url: http://xmpp-http-upload:8888
+        passHostHeader: true

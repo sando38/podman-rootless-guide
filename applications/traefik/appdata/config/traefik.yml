@@ -1,0 +1,75 @@
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: true
+
+entryPoints:
+#  ssh:
+#    address: :22
+  web:
+    address: :80
+    http:
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: :443
+#    forwardedHeaders:
+#      trustedIPs: 
+#        - "$CLOUDFLARE_IPS"
+#        - "$LOCAL_IPS"
+    http:
+      tls:
+        options: "default@file"
+  xmpp-server:
+    address: :5269
+  traefik:
+    address: :9000
+
+certificatesResolvers:
+  tls-challenge:
+    acme:
+      storage: "/acme/acme.json"
+      email: "iamgroot@example.com"
+      tlsChallenge: {}
+#  dns-cloudflare:
+#    acme:
+#      storage: "/acme/acme.json"
+#      dnsChallenge:
+#        #caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+#        provider: cloudflare
+#        resolvers:
+#          - 1.1.1.1:53
+#          - 1.0.0.1:53
+#        delayBeforeCheck: "90"
+
+log:
+  level: INFO
+#  filePath: logs/traefik.log
+#  format: json
+
+accessLog:
+  # Default: os.Stdout
+  bufferingSize: 100
+  filePath: /logs/access.log
+#  format: json
+  filters:
+    statusCodes: "400-499"
+
+api:
+  insecure: false
+  dashboard: true
+
+#ping:
+#  entryPoint: traefik
+
+providers:
+#  docker:
+#    endpoint: tcp://socket-wlna:2375
+#    defaultRule: Host(`{{ normalize .Name }}`)
+#    exposedByDefault: true
+  file:
+    watch: true
+    directory: "/rules"
+

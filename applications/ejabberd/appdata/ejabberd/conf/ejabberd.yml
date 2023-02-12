@@ -1,0 +1,429 @@
+###.  =======
+###'  Virtual hosts
+
+hosts:
+  - example.net
+
+###.  =======
+###'  LOGGING
+
+loglevel: info # none | emergency | alert | critical | error | warning | notice | info | debug
+log_rotate_size: 10485760
+log_rotate_count: 1
+#hide_sensitive_log_data: true
+
+###.  ============
+###'  Certificates
+
+certfiles:
+  - /opt/ejabberd/tls/*.pem
+
+###.  =================
+###'  TLS configuration
+
+define_macro:
+  'TLS_CIPHERS': "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256"
+  'TLS_OPTIONS':
+    - "no_sslv3"
+    - "no_tlsv1"
+    - "no_tlsv1_1"
+    - "cipher_server_preference"
+    - "no_compression"
+  'DHFILE': "/opt/ejabberd/dhparam/dh.pem"
+
+c2s_ciphers: 'TLS_CIPHERS'
+s2s_ciphers: 'TLS_CIPHERS'
+c2s_protocol_options: 'TLS_OPTIONS'
+s2s_protocol_options: 'TLS_OPTIONS'
+
+###.  ===============
+###'  LISTENING PORTS
+
+listen:
+  -
+    port: 5222
+    ip: "::"
+    module: ejabberd_c2s
+    max_stanza_size: 262144
+    dhfile: 'DHFILE'
+    shaper: c2s_shaper
+    access: c2s
+    starttls_required: true
+    use_proxy_protocol: true # forwarding client/server source ip during testing
+  -
+    port: 5223
+    ip: "::"
+    module: ejabberd_c2s
+    max_stanza_size: 262144
+    tls: true
+    dhfile: 'DHFILE'
+    shaper: c2s_shaper
+    access: c2s
+    use_proxy_protocol: true # forwarding client/server source ip during testing
+  -
+    port: 5269
+    ip: "::"
+    module: ejabberd_s2s_in
+    max_stanza_size: 524288
+    use_proxy_protocol: true # forwarding client/server source ip during testing
+  -
+    port: 5270
+    ip: "::"
+    module: ejabberd_s2s_in
+    max_stanza_size: 524288
+    tls: true
+    use_proxy_protocol: true # forwarding client/server source ip during testing
+  -
+    port: 5280 ## behind traefik reverse proxy
+    ip: "::"
+    module: ejabberd_http
+    tls: false
+    request_handlers:
+#      "/.well-known/acme-challenge": ejabberd_acme
+      "/.well-known/host-meta": mod_host_meta
+      "/.well-known/host-meta.json": mod_host_meta
+#      "/.well-known": mod_http_fileserver
+      "/account": mod_register_web
+      "/admin": ejabberd_web_admin
+      "/bosh": mod_bosh
+#      "/captcha": ejabberd_captcha
+#      "/chat": mod_conversejs
+      "/upload": mod_http_upload
+      "/ws": ejabberd_http_ws
+  -
+    port: 5443
+    ip: "::"
+    module: ejabberd_http
+    tls: true
+    dhfile: 'DHFILE'
+    ciphers: 'TLS_CIPHERS'
+    protocol_options: 'TLS_OPTIONS'
+    use_proxy_protocol: true # forwarding client/server source ip during testing
+    request_handlers:
+#      "/.well-known": mod_http_fileserver
+      "/.well-known/host-meta": mod_host_meta
+      "/.well-known/host-meta.json": mod_host_meta
+      "/account": mod_register_web
+      "/admin": ejabberd_web_admin
+      "/bosh": mod_bosh
+#      "/captcha": ejabberd_captcha
+#      "/chat": mod_conversejs
+      "/upload": mod_http_upload
+      "/ws": ejabberd_http_ws
+
+###.  ==================
+###'  S2S GLOBAL OPTIONS
+
+s2s_use_starttls: required
+s2s_dhfile: 'DHFILE'
+
+###.   ====================
+###'   ACCESS CONTROL LISTS
+
+acl:
+  local:
+    user_regexp: ""
+  loopback:
+    ip:
+      - 127.0.0.0/8
+      - ::1/128
+      - ::FFFF:127.0.0.1/128
+  admin:
+    user:
+      - "admin@example.net"
+
+disable_sasl_mechanisms:
+ - "digest-md5"
+ - "x-oauth2"
+
+###.  ================
+###'  DEFAULT LANGUAGE
+
+# >>> moved to host_configs part
+#language: "en"
+
+###.  ============
+###'  ACCESS RULES
+
+access_rules:
+  local:
+    allow: local
+  c2s:
+    deny: blocked
+    allow: all
+  announce:
+    allow: admin
+  configure:
+    allow: admin
+  muc_create:
+    allow: local
+  pubsub_createnode:
+    allow: local
+  register:
+    - allow
+  trusted_network:
+    allow: loopback
+
+## ===============
+## API PERMISSIONS
+## ===============
+
+api_permissions:
+  "console commands":
+    from:
+      - ejabberd_ctl
+    who: all
+    what: "*"
+  "admin access":
+    who:
+      access:
+        allow:
+          acl: loopback
+          acl: admin
+      oauth:
+        scope: "ejabberd:admin"
+        access:
+          allow:
+            acl: loopback
+            acl: admin
+    what:
+      - "*"
+      - "!stop"
+      - "!start"
+  "public commands":
+    who:
+      ip: 127.0.0.1/8
+    what:
+      - status
+      - connected_users_number
+
+###.  ===============
+###'  TRAFFIC SHAPERS
+
+shaper:
+  normal:
+    rate: 3000
+    burst_size: 20000
+  fast: 100000
+
+###.  ============
+###'  SHAPER RULES
+
+shaper_rules:
+  max_user_sessions: 10
+  max_user_offline_messages:
+    5000: admin
+    100: all
+  c2s_shaper:
+    none: admin
+    normal: all
+  s2s_shaper: fast
+
+max_fsm_queue: 10000
+
+###.  ====
+###'  ACME
+
+acme:
+  auto: false
+  contact: "mailto:iamgroot@example.com"
+#  ca_url: "https://acme-staging-v02.api.letsencrypt.org/directory"
+  ca_url: "https://acme-v02.api.letsencrypt.org/directory"
+  cert_type: rsa
+
+###.  ==============
+###'  DATABASE SETUP
+
+default_db: sql
+#default_ram_db: redis
+new_sql_schema: true
+
+sql_type: pgsql
+sql_server: "database"
+#sql_ssl: true
+sql_database: "ejabberd"
+sql_username: "ejabberd"
+sql_password: "password"
+sql_port: 5432
+sql_keepalive_interval: 600
+
+#redis_server: redis-single.redis
+#redis_db: 1
+#redis_password: 35q3afegaega35235gfEFDEF3244
+
+###.  =======
+###'  MODULES
+
+modules:
+  mod_adhoc: {}
+  mod_admin_extra: {}
+  mod_announce:
+    access: announce
+  mod_avatar: {}
+  mod_blocking: {}
+  mod_bosh: {}
+  mod_caps: {}
+  mod_carboncopy: {}
+  mod_client_state: {}
+  mod_configure: {}
+  mod_disco:
+    server_info:
+      -
+        modules: all
+        name: "abuse-addresses"
+        urls:
+          - "mailto:admin@example.com"
+      -
+        modules: all
+        name: "support-addresses"
+        urls:
+          - "mailto:admin@example.com"
+      -
+        modules: all
+        name: "admin-addresses"
+        urls:
+          - "mailto:admin@example.com"
+  mod_fail2ban: {}
+  mod_host_meta:
+    bosh_service_url: "https://@HOST@/bosh"
+    websocket_url: "wss://@HOST@/ws"
+#  mod_http_fileserver:
+#    docroot: "/opt/ejabberd/files/.well-known"
+#    accesslog: "/opt/ejabberd/logs/fileserver-access.log"
+#    content_types:
+#      .json: application/json
+#      "": application/xml
+  mod_http_upload:
+    put_url: "https://http-upload.@HOST@"
+    external_secret: "your-secret-with-nginx"
+    max_size: 104857600 # 100 MiB, also specified in the Nginx configuration.
+    access: local
+    secret_length: 40
+    file_mode: "0640"
+    dir_mode: "2750"
+    thumbnail: false
+    custom_headers:
+      "Access-Control-Allow-Origin": "*"
+      "Access-Control-Allow-Methods": "GET, HEAD, PUT, OPTIONS"
+      "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      "Access-Control-Allow-Credentials": "true"
+#  mod_http_upload_quota:
+#    max_days: 30
+  mod_last: {}
+#  mod_mqtt: {}
+  mod_offline:
+    access_max_user_messages: max_user_offline_messages
+  mod_ping: {}
+  mod_privacy: {}
+  mod_private: {}
+  mod_proxy65:
+    access: local
+    max_connections: 5
+  mod_push: {}
+  mod_push_keepalive: {}
+  mod_roster:
+    versioning: true
+  mod_sip: {}
+  mod_s2s_dialback: {}
+  mod_shared_roster: {}
+  mod_stream_mgmt:
+    resend_on_timeout: if_offline
+  mod_version:
+    show_os: false
+
+#include_config_file:
+#  - /home/ejabberd/etc/ejabberd/mod_cron.yml
+
+###.  =======
+###'  CAPTCHA
+
+#captcha_cmd: "/opt/ejabberd-@VERSION/lib/captcha.sh"
+#captcha_url: https://@HOST@/captcha
+#captcha_limit: 5
+
+###.  =======
+###'  virtual host specific configurations
+
+host_config:
+  example.net:
+    language: "en"
+    auth_method: sql
+    auth_password_format: scram
+#    auth_scram_hash: sha512
+
+append_host_config:
+  example.net:
+    modules:
+      mod_mam:
+        assume_mam_usage: true
+        default: always
+        request_activates_archiving: true
+      mod_muc:
+        access:
+          - allow
+        access_admin:
+          - allow: admin
+        access_create: muc_create
+        access_persistent: muc_create
+        access_mam:
+          - allow
+        default_room_options:
+          allow_subscription: true  # enable MucSub
+          mam: true
+          persistent: true
+          anonymous: true       # false is needed for OMEMO
+          members_only: false   # members_only 'true' for OMEMO
+          public: true
+          public_list: false
+        regexp_room_id: "^[A-Za-z0-9.,_-]+$"
+        history_size: 50 # archive is handled with XEP-0313 with mod_mam
+      mod_muc_admin: {}
+      mod_pubsub:
+        hosts:
+          - "comments.@HOST@"
+          - "news.@HOST@"
+        access_createnode: pubsub_createnode # movim config
+        ignore_pep_from_offline: false       # movim config
+        last_item_cache: false               # movim config
+        max_items_node: 1000                 # movim config
+        default_node_config:                 # movim config
+          max_items: 1000                    # movim config
+        plugins:
+          - flat
+          - pep
+        force_node_config:
+          ## Avoid buggy clients to make their bookmarks public
+          storage:bookmarks:
+            access_model: whitelist
+      mod_register:
+        ip_access: all
+        access: register
+        password_strength: 64
+        #captcha_protected: true
+        registration_watchers:
+          - admin@example.net
+      mod_stun_disco:
+        credentials_lifetime: 12h
+        secret: "your-super-secret-with-eturnal"
+        offer_local_services: false
+        services:
+            -
+              host: turn.example.net
+              type: turn
+              port: 443
+            -
+              host: turn.example.net
+              type: turns
+              port: 443
+            -
+              host: turn.example.net
+              type: stun
+              port: 443
+            -
+              host: turn.example.net
+              type: stuns
+              port: 443
+      mod_vcard: {}
+      mod_vcard_xupdate: {}
+
+

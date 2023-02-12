@@ -1,0 +1,23 @@
+http:
+  routers:
+    adminer:
+      entryPoints:
+        - websecure
+      middlewares:
+        - https-redirectscheme
+        - rate-limit
+        - basic-auth
+      service: adminer
+      rule: Host(`adminer.example.net`)
+#      priority: 42
+      tls:
+        options: mintls13
+        certResolver: tls-challenge
+        domains:
+          - main: adminer.example.net
+  services:
+    adminer:
+      loadBalancer:
+        servers:
+        - url: http://admintools-adminer-nginx:8000
+        passHostHeader: true

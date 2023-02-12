@@ -1,0 +1,12 @@
+tcp:
+  middlewares:
+    inflightconn:
+      inFlightConn:
+        amount: 10
+
+    rfc1918-ips:
+      ipWhiteList:
+        sourceRange:
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16

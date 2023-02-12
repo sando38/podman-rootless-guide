@@ -1,0 +1,27 @@
+tcp:
+  routers:
+    eturnal:
+      entryPoints:
+        - websecure
+          #middlewares:
+          #- inflightconn
+      service: eturnal
+      rule: HostSNI(`turn.example.net`)
+        #priority: 42
+      tls:
+        # passthrough: true
+        #options: mintls13
+        certResolver: tls-challenge
+        domains:
+          - main: turn.example.net
+#            sans:
+#              - foobar
+#              - foobar
+  services:
+    eturnal:
+      loadBalancer:
+        #terminationDelay: 42
+        proxyProtocol:
+          version: 2
+        servers:
+          - address: localhost:5349
