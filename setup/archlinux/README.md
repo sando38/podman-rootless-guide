@@ -14,11 +14,14 @@ For networking:
 ## add your users to SUDOers
 
 * e.g. by adding them the group `wheel`
-* enabling password-less `sudo` through uncommenting this part
+* enabling password-less `sudo` through uncommenting this part in `/etc/sudoers`
 
 ```console
+EDITOR=VIM visudo
+...
 ## Same thing without a password
 # %wheel ALL=(ALL:ALL) NOPASSWD: ALL
+...
 ```
 
 This change saves you some password typing. If you are done with your setup,

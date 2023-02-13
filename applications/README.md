@@ -26,5 +26,8 @@ chmod +x $ROOT_DIR/traefik/startup.sh
 $ROOT_DIR/traefik/startup.sh
 ```
 
+*Note: Do not run the scripts as `root`, because this would create rootful
+podman containers... obviously*
+
 Make sure you have checked the applications' scripts beforehand to fit your
 needs.

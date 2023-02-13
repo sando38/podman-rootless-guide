@@ -11,8 +11,8 @@ stacks. It should help users to achieve their goal in creating container stacks
 which
 
 * run rootless
-* have minimized associated performance impacts (e.g. through [custom
-networking](https://podman.io/community/meeting/notes/2021-10-05/Podman-Rootless-Networking.pdf))
+* have minimized associated [performance impacts](https://github.com/containers/podman/blob/main/docs/tutorials/performance.md)
+(e.g. through [custom networking](https://podman.io/community/meeting/notes/2021-10-05/Podman-Rootless-Networking.pdf))
 * are configured healthy in terms of e.g. linux capabilities, etc.
 
 It aims to provide example scripts for different operating systems how to setup
@@ -28,7 +28,7 @@ the various operating systems. The sections also include the parameters of the
 systems which run with the setup, e.g. OS version, Linux Kernel, Podman version,
 etc.
 
-The [setup](setup) directory contains an `nftables.conf.example` ruleset
+The [setup](setup) directory contains a `nftables.conf.example` ruleset
 tailored to the solutions presented in this repository.
 
 The [container](container) directory has examples of various scripts on how to
@@ -67,10 +67,10 @@ In the root of the applications directory are two files `pod.conf` and
 respective pod, e.g. database pod. The pods' numbers must match the ones defined
 in the `nftables.conf.example` ruleset.
 
-`resolve.conf` is used to be mounted into the
+`resolv.conf` is used to be mounted into the
 containers, because the pods and, hence, containers are started with the flag
 `--net=none`. Therefore, they do not always have the DNS service IPs at hand and
-will fail to query public addresses, if they do not have them. `resolve.conf`
+will fail to query public addresses, if they do not have them. `resolv.conf`
 currently contains the IP addresses from Cloudflare's [DNS services](https://one.one.one.one/dns/).
 Change those if wanted.
 
@@ -118,6 +118,18 @@ In `applications/traefik/appdata/rules` are the ingress rules defined for the
 respective services. Please adjust them to your need. To route traffic to other
 pods only the pod name is necessary, e.g. `database`.
 
+Other applications may need a secret which is used with `podman secret`. Those
+secrets are defined in [applications/secrets](applications/secrets).
+
+## General requirements
+
+* network bridges are created with `systemd-networkd`
+* to setup bridge networks and link them into a pod `sudo` rights are necessary.
+* this setup makes use of `nftables`, it should work also with `iptables` as the
+scripts do not touch any `nftables`-rules. This is done manually with the
+mentioned `nftables.conf`-example.
+* the setup is tested with `Podman` version `4.3.0`, it should also work with
+older versions, but probably not ancient
 
 ## Not covered yet
 
