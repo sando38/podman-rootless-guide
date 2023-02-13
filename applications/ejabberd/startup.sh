@@ -11,7 +11,7 @@ info()
 }
 
 # general variables
-docker_dir='/path/to/applications'
+docker_dir="${ROOT_DIR:-$HOME/podman-rootless-guide/applications}"
 secret_dir="$docker_dir/secrets"
 bridge_name="bridge1"
 podman_ipv4_net='10.1'

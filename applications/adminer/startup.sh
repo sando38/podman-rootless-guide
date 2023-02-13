@@ -11,13 +11,13 @@ info()
 }
 
 # general variables
-docker_dir='/path/to/applications'
+docker_dir="${ROOT_DIR:-$HOME/podman-rootless-guide/applications}"
 secret_dir="$docker_dir/secrets"
 bridge_name="bridge1"
 podman_ipv4_net='10.1'
 pod_ipv6_subnet='fdff:z:y:x'
 
-# define pod variables and create pod
+# define pod variables and create podW
 pod_name='admintools'
 pod_number="$(cat $docker_dir/pod.conf | grep $pod_name | awk '{print $2}')"
 pod_ipv4_subnet="${podman_ipv4_net}.${pod_number}"
