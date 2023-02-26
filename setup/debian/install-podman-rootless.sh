@@ -24,7 +24,7 @@ deb http://deb.debian.org/debian testing main non-free contrib
 deb http://deb.debian.org/debian unstable main non-free contrib" >> /etc/apt/sources.list
 
 apt update && apt-get update
-apt-get -f install libsemanage-common
+apt-get -y -f install libsemanage-common
 apt install -y podman/testing \
                slirp4netns/testing \
                aardvark-dns
