@@ -18,7 +18,7 @@ podman_ipv4_net='10.1'
 pod_ipv6_subnet='fdff:z:y:x'
 
 # define pod variables and create pod
-pod_name='proxy'
+pod_name='xmpp'
 pod_number="$(cat $docker_dir/pod.conf | grep $pod_name | awk '{print $2}')"
 pod_ipv4_subnet="${podman_ipv4_net}.${pod_number}"
 pod_ipv4_addr="${pod_ipv4_subnet}.100"
