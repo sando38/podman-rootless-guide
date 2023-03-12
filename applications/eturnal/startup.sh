@@ -65,7 +65,7 @@ create_pod()
 			| awk '{print $2}' | sed -e 's|"||g;s|,||')
 	net_ns_name="cont-${ctr_id}"
 	ctr_pc_id=$(podman inspect -f '{{.State.Pid}}' "${ctr_id}")
-	[[ ! -d /var/run/netns ]] && sudo mkdir -v /var/run/netns
+	[ ! -d /var/run/netns ] && sudo mkdir -v /var/run/netns
 	sudo ln -sfTv "/proc/${ctr_pc_id}/ns/net" "/var/run/netns/${net_ns_name}"
 	ip netns list
 	## link container to bridge interface (only needed for the first container)
